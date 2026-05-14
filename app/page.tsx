@@ -47,29 +47,51 @@ export default function Home() {
   const [copied, setCopied] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const compressImage = (file: File): Promise<{ base64: string; preview: string }> => {
+    return new Promise((res) => {
+      const img = new Image()
+      const url = URL.createObjectURL(file)
+      img.onload = () => {
+        const MAX = 1200
+        let { width, height } = img
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round(height * MAX / width); width = MAX }
+          else { width = Math.round(width * MAX / height); height = MAX }
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height)
+        const preview = canvas.toDataURL('image/jpeg', 0.85)
+        const base64 = preview.split(',')[1]
+        URL.revokeObjectURL(url)
+        res({ base64, preview })
+      }
+      img.src = url
+    })
+  }
+
   const processFiles = useCallback(async (incoming: File[]) => {
     const valid = incoming
       .filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'))
       .slice(0, 10 - files.length)
 
     const processed = await Promise.all(valid.map(async (file) => {
-      const base64 = await new Promise<string>((res) => {
-        const reader = new FileReader()
-        reader.onload = e => res((e.target?.result as string).split(',')[1])
-        reader.readAsDataURL(file)
-      })
-      const preview = await new Promise<string>((res) => {
-        const reader = new FileReader()
-        reader.onload = e => res(e.target?.result as string)
-        reader.readAsDataURL(file)
-      })
+      const isVideo = file.type.startsWith('video/')
+      let base64 = ''
+      let preview = ''
+      if (!isVideo) {
+        const compressed = await compressImage(file)
+        base64 = compressed.base64
+        preview = compressed.preview
+      }
       return {
         id: Math.random().toString(36).slice(2),
         file,
         preview,
         base64,
-        type: file.type.startsWith('video/') ? 'image/jpeg' : file.type,
-        isVideo: file.type.startsWith('video/')
+        type: 'image/jpeg',
+        isVideo
       }
     }))
 
