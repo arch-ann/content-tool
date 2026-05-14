@@ -141,7 +141,7 @@ export default function Home() {
       <div className="max-w-2xl mx-auto px-5 py-12">
 
         <div className="mb-10">
-          <p className="text-xs tracking-[0.2em] uppercase text-zinc-500 mb-3">Arch Ann</p>
+          <p className="text-xs tracking-[0.2em] uppercase text-zinc-500 mb-3">Have Creative Agency</p>
           <h1 className="text-2xl font-medium tracking-tight text-white">Content Prompt Generator</h1>
           <p className="text-sm text-zinc-400 mt-2">Drop your media, pick a goal, get a content plan.</p>
         </div>

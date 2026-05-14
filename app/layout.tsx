@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Content Prompt Generator — Arch Ann",
+  title: "Content Prompt Generator — Have Creative Agency",
   description: "Drop your media, pick a goal, get a ready-to-use content plan.",
 };
 
