@@ -45,6 +45,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const compressImage = (file: File): Promise<{ base64: string; preview: string }> => {
@@ -76,26 +77,39 @@ export default function Home() {
       .filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'))
       .slice(0, 10 - files.length)
 
-    const processed = await Promise.all(valid.map(async (file) => {
+    if (!valid.length) return
+
+    const imageFiles = valid.filter(f => !f.type.startsWith('video/'))
+    const total = imageFiles.length
+    setUploadProgress(total > 0 ? { current: 0, total } : null)
+
+    const processed: MediaFile[] = []
+
+    for (const file of valid) {
       const isVideo = file.type.startsWith('video/')
       let base64 = ''
       let preview = ''
+
       if (!isVideo) {
         const compressed = await compressImage(file)
         base64 = compressed.base64
         preview = compressed.preview
+        setUploadProgress(prev => prev ? { ...prev, current: prev.current + 1 } : null)
       }
-      return {
+
+      processed.push({
         id: Math.random().toString(36).slice(2),
         file,
         preview,
         base64,
         type: 'image/jpeg',
         isVideo
-      }
-    }))
+      })
 
-    setFiles(prev => [...prev, ...processed].slice(0, 10))
+      setFiles(prev => [...prev, ...processed.slice(prev.length)].slice(0, 10))
+    }
+
+    setUploadProgress(null)
   }, [files.length])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -187,6 +201,21 @@ export default function Home() {
                 <p className="text-xs text-zinc-400 mt-2 font-medium">{files.length} file{files.length > 1 ? 's' : ''} added</p>
               )}
             </div>
+
+            {uploadProgress && (
+              <div className="mt-3 mb-2">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs text-zinc-500">Processing {uploadProgress.current} of {uploadProgress.total} images...</span>
+                  <span className="text-xs text-zinc-500">{Math.round((uploadProgress.current / uploadProgress.total) * 100)}%</span>
+                </div>
+                <div className="h-0.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-white rounded-full transition-all duration-300"
+                    style={{ width: `${Math.round((uploadProgress.current / uploadProgress.total) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
 
             {files.length > 0 && (
               <div className="grid grid-cols-5 gap-2 mb-6">
